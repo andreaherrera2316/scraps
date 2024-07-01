@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timedelta
 from data.csv.csv_store import CSVStore
 from entities.scrape_request.scrape_request import ScrapeRequest
@@ -10,16 +11,19 @@ from use_cases.request_generator.historical.historical_request_generator import 
 )
 from use_cases.scraper.scraper_config import ScraperConfig
 from use_cases.scraper.tor.tor_scraper import TorScraper
+from use_cases.scraper.regular.regular_scraper import RegularScraper
 
 
 # Scrape Site Info
 url = "https://example.com"
-payload = {"example_payload": 0}
+payload = {
+    "static": "data",
+}
 request_sample = ScrapeRequest(url, payload)
 
 # Generator
-start = datetime(2023, 1, 1)
-end = datetime.now()
+start = datetime.now() - timedelta(days=30) + timedelta(hours=23)
+end = datetime.now() + timedelta(days=7, hours=22)
 interval = timedelta(days=7)
 
 config_generator = HistoricalConfig(start_date=start, end_date=end, interval=interval)
@@ -37,10 +41,22 @@ basic_factory = BasicDataFactory({ScrapeDataFactory, ScrapedData})
 csv_store = CSVStore(multiple_files=False)
 
 # Scraper
-config = ScraperConfig(20, 40)
+config = ScraperConfig(3, 5)
 tor_scraper = TorScraper(
     request_generator=historic_generator,
     data_factory=basic_factory,
     data_store=csv_store,
     config=config,
 )
+regular_scraper = RegularScraper(
+    request_generator=historic_generator,
+    data_factory=basic_factory,
+    data_store=csv_store,
+    config=config,
+)
+
+
+print("Begin Scraping")
+# asyncio.run(tor_scraper.scrape())
+# asyncio.run(regular_scraper.scrape())
+print("Done Scraping")

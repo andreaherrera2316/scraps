@@ -22,17 +22,19 @@ class Scraper(ABC):
         self.data_factory = data_factory
         self.data_store = data_store
         self.config = config
+        self.stop = False
 
     @abstractmethod
-    async def fetch(self, request: ScrapeRequest) -> Dict[str, Any]:
+    async def fetch(self, request: ScrapeRequest) -> Dict[str, Any] | None:
         pass
 
     async def scrape(self) -> None:
-        while self.request_generator.working():
+        while self.request_generator.working() and not self.stop:
             request = self.request_generator.next()
             response = await self.fetch(request)
-            data = self.data_factory.create(response)
-            self.data_store.save(data, request)
-            await asyncio.sleep(
-                random.uniform(self.config.interval_start, self.config.interval_end)
-            )
+            if response is not None:
+                data = self.data_factory.create(response)
+                self.data_store.save(data, request)
+                await asyncio.sleep(
+                    random.uniform(self.config.interval_start, self.config.interval_end)
+                )

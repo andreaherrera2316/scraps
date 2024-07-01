@@ -15,15 +15,33 @@ class DatedRequest(ScrapeRequest):
         end_key: str = "to",
     ):
         super().__init__(url, payload)
-        self.start_date = start_date
-        self.end_date = end_date
+        self._start_date = start_date
+        self._end_date = end_date
         self.start_key = start_key
         self.end_key = end_key
+        # Update Payload with ISO formatted dates without milliseconds and with 'Z' at the end
+        payload[self.start_key] = (
+            self._start_date.replace(microsecond=0).isoformat() + ".000Z"
+        )
+        payload[self.end_key] = (
+            self._end_date.replace(microsecond=0).isoformat() + ".000Z"
+        )
+        self.payload = payload
 
-    def set_start_date(self, start_date: datetime) -> None:
-        self.start_date = start_date
+    @property
+    def start_date(self) -> datetime:
+        return self._start_date
+
+    @start_date.setter
+    def start_date(self, value: datetime) -> None:
+        self._start_date = value
         self._update_payload()
 
-    def set_end_date(self, end_date: datetime) -> None:
-        self.end_date = end_date
+    @property
+    def end_date(self) -> datetime:
+        return self._end_date
+
+    @end_date.setter
+    def end_date(self, value: datetime) -> None:
+        self._end_date = value
         self._update_payload()
