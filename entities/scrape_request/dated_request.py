@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, Any
+from typing import Dict, Any, Callable
 
 from entities.scrape_request.scrape_request import ScrapeRequest
 
@@ -13,20 +13,22 @@ class DatedRequest(ScrapeRequest):
         end_date: datetime,
         start_key: str = "from",
         end_key: str = "to",
+        date_formatter: Callable[[datetime], str] = None,
     ):
         super().__init__(url, payload)
         self._start_date = start_date
         self._end_date = end_date
         self.start_key = start_key
         self.end_key = end_key
-        # Update Payload with ISO formatted dates without milliseconds and with 'Z' at the end
-        payload[self.start_key] = (
-            self._start_date.replace(microsecond=0).isoformat() + ".000Z"
-        )
-        payload[self.end_key] = (
-            self._end_date.replace(microsecond=0).isoformat() + ".000Z"
-        )
+        self.date_formatter = date_formatter or self._default_date_formatter
+        # Update Payload with formatted dates
+        payload[self.start_key] = self.date_formatter(self._start_date)
+        payload[self.end_key] = self.date_formatter(self._end_date)
         self.payload = payload
+
+    @staticmethod
+    def _default_date_formatter(date: datetime) -> str:
+        return date.replace(microsecond=0).isoformat() + ".000Z"
 
     @property
     def start_date(self) -> datetime:
@@ -45,3 +47,7 @@ class DatedRequest(ScrapeRequest):
     def end_date(self, value: datetime) -> None:
         self._end_date = value
         self._update_payload()
+
+    def _update_payload(self) -> None:
+        self.payload[self.start_key] = self.date_formatter(self._start_date)
+        self.payload[self.end_key] = self.date_formatter(self._end_date)

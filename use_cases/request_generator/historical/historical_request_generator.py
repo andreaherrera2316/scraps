@@ -1,10 +1,11 @@
-from datetime import timedelta
-from typing import Optional
+from datetime import datetime, timedelta
+from typing import Callable, Optional
 from decorators.base_class import baseclass
 from entities.scrape_request.dated_request import DatedRequest
 from entities.scrape_request.scrape_request import ScrapeRequest
 from use_cases.request_generator.historical.historical_config import HistoricalConfig
 from use_cases.request_generator.request_generator import RequestGenerator
+from formatters.ymd_formatter import ymd_format_date
 
 
 class HistoricalRequestGenerator(RequestGenerator):
@@ -25,11 +26,13 @@ class HistoricalRequestGenerator(RequestGenerator):
         initial_request: ScrapeRequest,
         start_key: Optional[str] = "from",
         end_key: Optional[str] = "to",
+        date_formatter: Callable[[datetime], str] = ymd_format_date,
     ):
         self.config = config
         self.initial_request = initial_request
         self.start_key = start_key
         self.end_key = end_key
+        self.date_formatter: Callable[[datetime], str] = date_formatter
         self._requests_made: int = 0
 
         if config.go_back_in_time:
@@ -105,6 +108,7 @@ class HistoricalRequestGenerator(RequestGenerator):
             self.current_end_date,
             self.start_key,
             self.end_key,
+            self.date_formatter,
         )
 
         # Update state for the next request by adding the interval
@@ -151,4 +155,5 @@ class HistoricalRequestGenerator(RequestGenerator):
             remainder_end,
             self.start_key,
             self.end_key,
+            self.date_formatter,
         )
